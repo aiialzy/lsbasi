@@ -15,7 +15,7 @@ type Interpreter struct {
 }
 
 func (i *Interpreter) error() {
-	panic("Error parsing input")
+	panic("Invalid syntax")
 }
 
 func (i *Interpreter) integer() string {
@@ -93,38 +93,62 @@ func (i *Interpreter) eat(tokenType token.TokenType) {
 	}
 }
 
-func (i *Interpreter) Expr() int64 {
-	i.currentToken = i.getNextToken()
-
+func (i *Interpreter) term() int64 {
 	result, _ := strconv.ParseInt(i.currentToken.Value, 10, 64)
 	i.eat(token.INTEGER)
+	return result
+}
 
-	for i.currentToken.Type != token.EOF {
+func (i *Interpreter) expr() int64 {
 
-		op := i.currentToken
-		i.eat(op.Type)
+	result := i.term()
+	tokens := []token.TokenType{
+		token.PLUS,
+		token.SUB,
+		token.MUL,
+		token.DIV,
+		token.MOD,
+	}
 
-		right, _ := strconv.ParseInt(i.currentToken.Value, 10, 64)
-		i.eat(token.INTEGER)
-
-		switch op.Type {
+	for i.in(i.currentToken.Type, tokens) {
+		switch i.currentToken.Type {
 		case token.PLUS:
-			result += right
+			i.eat(token.PLUS)
+			result += i.term()
 
 		case token.SUB:
-			result -= right
+			i.eat(token.SUB)
+			result -= i.term()
 
 		case token.MUL:
-			result *= right
+			i.eat(token.MUL)
+			result *= i.term()
 
 		case token.DIV:
-			result /= right
+			i.eat(token.DIV)
+			result /= i.term()
 
 		case token.MOD:
-			result %= right
+			i.eat(token.MOD)
+			result %= i.term()
 		}
 	}
 	return result
+}
+
+func (i *Interpreter) in(tokenType token.TokenType, tokenTypes []token.TokenType) bool {
+	for _, tt := range tokenTypes {
+		if tokenType == tt {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (i *Interpreter) Interprete() int64 {
+	i.currentToken = i.getNextToken()
+	return i.expr()
 }
 
 func New(text []rune) *Interpreter {

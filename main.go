@@ -22,7 +22,7 @@ func main() {
 		}
 
 		i := interpreter.New([]rune(string(text)))
-		result := i.Expr()
+		result := i.Interprete()
 		fmt.Println(result)
 	}
 }
