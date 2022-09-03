@@ -11,58 +11,73 @@ type Interpreter struct {
 	text         []rune
 	pos          int
 	currentToken *token.Token
+	currentChar  rune
 }
 
 func (i *Interpreter) error() {
 	panic("Error parsing input")
 }
 
-func (i *Interpreter) readNumber() string {
-	text := i.text
+func (i *Interpreter) integer() string {
 	var number strings.Builder
-	for i.pos < len(text) && unicode.IsDigit(text[i.pos]) {
-		number.WriteRune(text[i.pos])
-		i.pos += 1
+	for unicode.IsDigit(i.currentChar) {
+		number.WriteRune(i.currentChar)
+		i.advance()
 	}
 
 	return number.String()
 }
 
 func (i *Interpreter) skipWhiteSpace() {
-	text := i.text
-	for unicode.IsSpace(text[i.pos]) {
-		i.pos += 1
+	for unicode.IsSpace(i.currentChar) {
+		i.advance()
+	}
+}
+
+func (i *Interpreter) advance() {
+	i.pos += 1
+	if i.pos < len(i.text) {
+		i.currentChar = i.text[i.pos]
+	} else {
+		i.currentChar = 0
 	}
 }
 
 func (i *Interpreter) getNextToken() *token.Token {
-	text := i.text
-	if i.pos > len(text)-1 {
-		return token.New(token.EOF, "")
-	}
 
-	currentChar := text[i.pos]
-
-	if unicode.IsSpace(currentChar) {
+	if unicode.IsSpace(i.currentChar) {
 		i.skipWhiteSpace()
 	}
 
-	currentChar = text[i.pos]
-
-	if unicode.IsDigit(currentChar) {
-		number := i.readNumber()
-		t := token.New(token.INTEGER, number)
-		return t
+	if i.currentChar == 0 {
+		return token.New(token.EOF, "")
 	}
 
-	if currentChar == '+' {
-		t := token.New(token.PLUS, string(currentChar))
-		i.pos += 1
-		return t
-	} else if currentChar == '-' {
-		t := token.New(token.SUB, string(currentChar))
-		i.pos += 1
-		return t
+	if unicode.IsDigit(i.currentChar) {
+		number := i.integer()
+		return token.New(token.INTEGER, number)
+	}
+
+	switch i.currentChar {
+	case '+':
+		i.advance()
+		return token.New(token.PLUS, string(i.currentChar))
+
+	case '-':
+		i.advance()
+		return token.New(token.SUB, string(i.currentChar))
+
+	case '*':
+		i.advance()
+		return token.New(token.MUL, string(i.currentChar))
+
+	case '/':
+		i.advance()
+		return token.New(token.DIV, string(i.currentChar))
+
+	case '%':
+		i.advance()
+		return token.New(token.MOD, string(i.currentChar))
 	}
 
 	i.error()
@@ -80,28 +95,47 @@ func (i *Interpreter) eat(tokenType token.TokenType) {
 
 func (i *Interpreter) Expr() int64 {
 	i.currentToken = i.getNextToken()
-	left, _ := strconv.ParseInt(i.currentToken.Value, 10, 64)
+
+	result, _ := strconv.ParseInt(i.currentToken.Value, 10, 64)
 	i.eat(token.INTEGER)
 
-	op := i.currentToken
-	i.eat(op.Type)
+	for i.currentToken.Type != token.EOF {
 
-	right, _ := strconv.ParseInt(i.currentToken.Value, 10, 64)
-	i.eat(token.INTEGER)
+		op := i.currentToken
+		i.eat(op.Type)
 
-	var result int64
-	if op.Type == token.PLUS {
-		result = left + right
-	} else if op.Type == token.SUB {
-		result = left - right
+		right, _ := strconv.ParseInt(i.currentToken.Value, 10, 64)
+		i.eat(token.INTEGER)
+
+		switch op.Type {
+		case token.PLUS:
+			result += right
+
+		case token.SUB:
+			result -= right
+
+		case token.MUL:
+			result *= right
+
+		case token.DIV:
+			result /= right
+
+		case token.MOD:
+			result %= right
+		}
 	}
 	return result
 }
 
 func New(text []rune) *Interpreter {
+	if len(text) == 0 {
+		panic("text length must bigger than 0")
+	}
+
 	return &Interpreter{
 		text:         text,
 		pos:          0,
 		currentToken: nil,
+		currentChar:  text[0],
 	}
 }

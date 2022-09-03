@@ -8,6 +8,9 @@ const (
 	INTEGER TokenType = "INTEGER"
 	PLUS    TokenType = "PLUS"
 	SUB     TokenType = "SUB"
+	MUL     TokenType = "MUL"
+	DIV     TokenType = "DIV"
+	MOD     TokenType = "MOD"
 	EOF     TokenType = "EOF"
 )
 
