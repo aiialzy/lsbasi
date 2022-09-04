@@ -23,6 +23,7 @@ func main() {
 
 		i := interpreter.New([]rune(string(text)))
 		result := i.Interprete()
+		fmt.Println()
 		fmt.Println(result)
 	}
 }

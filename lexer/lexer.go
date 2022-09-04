@@ -59,31 +59,31 @@ func (l *Lexer) GetNextToken() *token.Token {
 	switch l.currentChar {
 	case '+':
 		l.advance()
-		return token.New(token.PLUS, string(l.currentChar))
+		return token.New(token.PLUS, "+")
 
 	case '-':
 		l.advance()
-		return token.New(token.SUB, string(l.currentChar))
+		return token.New(token.SUB, "-")
 
 	case '*':
 		l.advance()
-		return token.New(token.MUL, string(l.currentChar))
+		return token.New(token.MUL, "*")
 
 	case '/':
 		l.advance()
-		return token.New(token.DIV, string(l.currentChar))
+		return token.New(token.DIV, "/")
 
 	case '%':
 		l.advance()
-		return token.New(token.MOD, string(l.currentChar))
+		return token.New(token.MOD, "%")
 
 	case '(':
 		l.advance()
-		return token.New(token.LPAREN, string(l.currentChar))
+		return token.New(token.LPAREN, "(")
 
 	case ')':
 		l.advance()
-		return token.New(token.RPAREN, string(l.currentChar))
+		return token.New(token.RPAREN, ")")
 	}
 
 	l.error()

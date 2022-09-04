@@ -1,104 +1,81 @@
 package interpreter
 
 import (
+	"fmt"
 	"lsbasi/lexer"
+	"lsbasi/parser"
 	"lsbasi/token"
 	"strconv"
 )
 
 type Interpreter struct {
-	currentToken *token.Token
-	lexer        *lexer.Lexer
+	parser *parser.Parser
 }
 
 func (i *Interpreter) error() {
 	panic("Invalid syntax")
 }
 
-func (i *Interpreter) eat(tokenType token.TokenType) {
-	if i.currentToken.Type == tokenType {
-		i.currentToken = i.lexer.GetNextToken()
-	} else {
-		i.error()
+func (i *Interpreter) visit(node interface{}) int64 {
+	switch n := node.(type) {
+	case parser.Num:
+		return i.visitNum(n)
+
+	case parser.BinOp:
+		return i.visitBinOp(n)
 	}
+
+	i.error()
+	return 0
 }
 
-func (i *Interpreter) factor() int64 {
-	var result int64
-	if i.currentToken.Type == token.LPAREN {
-		i.eat(token.LPAREN)
-		result = i.expr()
-		i.eat(token.RPAREN)
-	} else if i.currentToken.Type == token.INTEGER {
-		result, _ = strconv.ParseInt(i.currentToken.Value, 10, 64)
-		i.eat(token.INTEGER)
-	}
+func (i *Interpreter) visitNum(node parser.Num) int64 {
+	value := node.Value.(*token.Token)
+	result, _ := strconv.ParseInt(value.Value.(string), 10, 64)
+	fmt.Printf("%v ", result)
 	return result
 }
 
-func (i *Interpreter) term() int64 {
-	result := i.factor()
+func (i *Interpreter) visitBinOp(node parser.BinOp) int64 {
+	op := node.Op.(*token.Token)
+	fmt.Printf("(%v ", op.Value.(string))
 
-	tokens := []token.TokenType{
-		token.MUL,
-		token.DIV,
-		token.MOD,
+	l := i.visit(node.Left)
+	r := i.visit(node.Right)
+	fmt.Printf(")")
+
+	// fmt.Printf("(%v ", op.Value.(string))
+
+	switch op.Type {
+	case token.PLUS:
+		return l + r
+
+	case token.SUB:
+		return l - r
+
+	case token.MUL:
+		return l * r
+
+	case token.DIV:
+		return l / r
+
+	case token.MOD:
+		return l % r
 	}
 
-	for i.in(i.currentToken.Type, tokens) {
-		if i.currentToken.Type == token.MUL {
-			i.eat(token.MUL)
-			result *= i.factor()
-		} else if i.currentToken.Type == token.DIV {
-			i.eat(token.DIV)
-			result /= i.factor()
-		} else if i.currentToken.Type == token.MOD {
-			i.eat(token.MOD)
-			result %= i.factor()
-		}
-	}
-
-	return result
-}
-
-func (i *Interpreter) expr() int64 {
-
-	result := i.term()
-	tokens := []token.TokenType{
-		token.PLUS,
-		token.SUB,
-	}
-
-	for i.in(i.currentToken.Type, tokens) {
-		if i.currentToken.Type == token.PLUS {
-			i.eat(token.PLUS)
-			result += i.term()
-		} else if i.currentToken.Type == token.SUB {
-			i.eat(token.SUB)
-			result -= i.term()
-		}
-	}
-	return result
-}
-
-func (i *Interpreter) in(tokenType token.TokenType, tokenTypes []token.TokenType) bool {
-	for _, tt := range tokenTypes {
-		if tokenType == tt {
-			return true
-		}
-	}
-
-	return false
+	i.error()
+	return 0
 }
 
 func (i *Interpreter) Interprete() int64 {
-	i.currentToken = i.lexer.GetNextToken()
-	return i.expr()
+	root := i.parser.Parse()
+	result := i.visit(root)
+	return result
 }
 
 func New(text []rune) *Interpreter {
+	l := lexer.New(text)
 	return &Interpreter{
-		currentToken: nil,
-		lexer:        lexer.New(text),
+		parser: parser.New(l),
 	}
 }

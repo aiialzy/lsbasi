@@ -18,7 +18,7 @@ const (
 
 type Token struct {
 	Type  TokenType
-	Value string
+	Value interface{}
 }
 
 func (t Token) String() string {
