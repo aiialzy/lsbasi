@@ -1,0 +1,9 @@
+expr => term ((PLUS | SUB) term)*
+term =>  factor ((MUL | DIV | MOD) factor)*
+factor => integer
+
+digit_excluding_zero => "1" ... "9"
+digit_zero => "0"
+digit => digit_zero | digit_excluding_zero
+
+integer => ("0x" | "0o" | "0b")? (digit)+
