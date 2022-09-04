@@ -1,6 +1,6 @@
 expr => term ((PLUS | SUB) term)*
 term =>  factor ((MUL | DIV | MOD) factor)*
-factor => integer | LPAREN expr RPAREN
+factor => (PLUS | SUB) factor | LPAREN expr RPAREN | integer
 
 digit_excluding_zero => "1" ... "9"
 digit_zero => "0"

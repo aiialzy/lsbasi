@@ -28,6 +28,13 @@ func (p *Parser) factor() interface{} {
 		p.eat(token.LPAREN)
 		l = p.expr()
 		p.eat(token.RPAREN)
+	} else if p.currentToken.Type == token.PLUS || p.currentToken.Type == token.SUB {
+		op := p.currentToken
+		p.eat(op.Type)
+		l = UnaryOp{
+			Op:    op,
+			Right: p.factor(),
+		}
 	} else if p.currentToken.Type == token.INTEGER {
 		l = Num{
 			Value: p.currentToken,

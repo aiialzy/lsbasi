@@ -10,6 +10,12 @@ type BinOp struct {
 	Right interface{}
 }
 
+type UnaryOp struct {
+	AST
+	Op    interface{}
+	Right interface{}
+}
+
 type Num struct {
 	AST
 	Value interface{}

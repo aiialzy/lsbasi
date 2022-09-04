@@ -1,7 +1,6 @@
 package interpreter
 
 import (
-	"fmt"
 	"lsbasi/lexer"
 	"lsbasi/parser"
 	"lsbasi/token"
@@ -21,6 +20,9 @@ func (i *Interpreter) visit(node interface{}) int64 {
 	case parser.Num:
 		return i.visitNum(n)
 
+	case parser.UnaryOp:
+		return i.visitUnaryOp(n)
+
 	case parser.BinOp:
 		return i.visitBinOp(n)
 	}
@@ -32,19 +34,27 @@ func (i *Interpreter) visit(node interface{}) int64 {
 func (i *Interpreter) visitNum(node parser.Num) int64 {
 	value := node.Value.(*token.Token)
 	result, _ := strconv.ParseInt(value.Value.(string), 10, 64)
-	fmt.Printf("%v ", result)
 	return result
+}
+
+func (i *Interpreter) visitUnaryOp(node parser.UnaryOp) int64 {
+	op := node.Op.(*token.Token)
+
+	if op.Type == token.PLUS {
+		return i.visit(node.Right)
+	} else if op.Type == token.SUB {
+		return -i.visit(node.Right)
+	}
+
+	i.error()
+	return 0
 }
 
 func (i *Interpreter) visitBinOp(node parser.BinOp) int64 {
 	op := node.Op.(*token.Token)
-	fmt.Printf("(%v ", op.Value.(string))
 
 	l := i.visit(node.Left)
 	r := i.visit(node.Right)
-	fmt.Printf(")")
-
-	// fmt.Printf("(%v ", op.Value.(string))
 
 	switch op.Type {
 	case token.PLUS:
