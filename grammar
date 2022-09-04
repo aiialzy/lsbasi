@@ -1,9 +1,25 @@
+var => "var"
+
+program => compound_statement
+compound_statement => LBRACE (statement)* RBRACE
+statement => compound_statement | assignment_statement | empty
+assignment_statement => var id ASSIGN expr SEMI
+
+comment => "//" \w* \n || "/*" .* "*/"
+
 expr => term ((PLUS | SUB) term)*
 term =>  factor ((MUL | DIV | MOD) factor)*
-factor => (PLUS | SUB) factor | LPAREN expr RPAREN | integer
+factor => (PLUS | SUB) factor | LPAREN expr RPAREN | integer | id
+
+id => (underline | alpha) (underline | alpha | digit)*
+integer => ("0x" | "0o" | "0b")? (digit)+
 
 digit_excluding_zero => "1" ... "9"
 digit_zero => "0"
 digit => digit_zero | digit_excluding_zero
 
-integer => ("0x" | "0o" | "0b")? (digit)+
+lower_alpha => "a" ... "z"
+upper_alpha => "A" ... "Z"
+alpha => lower_alpha | upper_alpha
+underline => "_"
+empty => ""

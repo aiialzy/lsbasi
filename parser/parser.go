@@ -40,6 +40,11 @@ func (p *Parser) factor() interface{} {
 			Value: p.currentToken,
 		}
 		p.eat(token.INTEGER)
+	} else if p.currentToken.Type == token.ID {
+		l = ID{
+			Token: p.currentToken,
+		}
+		p.eat(token.ID)
 	}
 	return l
 }
@@ -96,6 +101,63 @@ func (p *Parser) expr() interface{} {
 	return l
 }
 
+func (p *Parser) program() interface{} {
+	return p.compoundStatement()
+}
+
+func (p *Parser) compoundStatement() interface{} {
+	p.eat(token.LBRACE)
+	statements := []interface{}{}
+	for p.currentToken.Type != token.RBRACE {
+		statements = append(statements, p.statement())
+	}
+	p.eat(token.RBRACE)
+	return Compound{
+		Children: statements,
+	}
+}
+
+func (p *Parser) statement() interface{} {
+	if p.currentToken.Type == token.LBRACE {
+		return p.compoundStatement()
+	} else if p.currentToken.Type == token.VAR {
+		statement := p.assignmentStatement()
+		p.eat(token.SEMI)
+		return statement
+	} else if p.currentToken.Type == token.SEMI {
+		p.eat(token.SEMI)
+	}
+	return p.empty()
+}
+
+func (p *Parser) assignmentStatement() interface{} {
+	p.eat(token.VAR)
+
+	id := p.id()
+
+	op := p.currentToken
+	p.eat(token.ASSIGN)
+
+	value := p.expr()
+	return Assign{
+		Left:  id,
+		Op:    op,
+		Right: value,
+	}
+}
+
+func (p *Parser) id() interface{} {
+	id := ID{
+		Token: p.currentToken,
+	}
+	p.eat(token.ID)
+	return id
+}
+
+func (p *Parser) empty() interface{} {
+	return NoOp{}
+}
+
 func (p *Parser) in(tokenType token.TokenType, tokenTypes []token.TokenType) bool {
 	for _, tt := range tokenTypes {
 		if tokenType == tt {
@@ -108,7 +170,7 @@ func (p *Parser) in(tokenType token.TokenType, tokenTypes []token.TokenType) boo
 
 func (p *Parser) Parse() interface{} {
 	p.currentToken = p.lexer.GetNextToken()
-	return p.expr()
+	return p.program()
 }
 
 func New(l *lexer.Lexer) *Parser {

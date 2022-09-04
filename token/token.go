@@ -13,12 +13,18 @@ const (
 	MOD     TokenType = "MOD"
 	LPAREN  TokenType = "LPAREN"
 	RPAREN  TokenType = "RPAREN"
+	LBRACE  TokenType = "LBRACE"
+	RBRACE  TokenType = "RBRACE"
+	SEMI    TokenType = "SEMI"
+	ASSIGN  TokenType = "ASSGIN"
+	VAR     TokenType = "VAR"
+	ID      TokenType = "ID"
 	EOF     TokenType = "EOF"
 )
 
 type Token struct {
 	Type  TokenType
-	Value interface{}
+	Value string
 }
 
 func (t Token) String() string {
@@ -26,8 +32,12 @@ func (t Token) String() string {
 }
 
 func New(tokenType TokenType, value string) *Token {
-	return &Token{
+	t := &Token{
 		Type:  tokenType,
 		Value: value,
 	}
+
+	// fmt.Println(t)
+
+	return t
 }
