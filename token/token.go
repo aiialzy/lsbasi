@@ -11,6 +11,8 @@ const (
 	MUL     TokenType = "MUL"
 	DIV     TokenType = "DIV"
 	MOD     TokenType = "MOD"
+	LPAREN  TokenType = "LPAREN"
+	RPAREN  TokenType = "RPAREN"
 	EOF     TokenType = "EOF"
 )
 

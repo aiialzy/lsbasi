@@ -24,8 +24,15 @@ func (i *Interpreter) eat(tokenType token.TokenType) {
 }
 
 func (i *Interpreter) factor() int64 {
-	result, _ := strconv.ParseInt(i.currentToken.Value, 10, 64)
-	i.eat(token.INTEGER)
+	var result int64
+	if i.currentToken.Type == token.LPAREN {
+		i.eat(token.LPAREN)
+		result = i.expr()
+		i.eat(token.RPAREN)
+	} else if i.currentToken.Type == token.INTEGER {
+		result, _ = strconv.ParseInt(i.currentToken.Value, 10, 64)
+		i.eat(token.INTEGER)
+	}
 	return result
 }
 

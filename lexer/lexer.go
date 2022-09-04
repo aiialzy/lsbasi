@@ -76,6 +76,14 @@ func (l *Lexer) GetNextToken() *token.Token {
 	case '%':
 		l.advance()
 		return token.New(token.MOD, string(l.currentChar))
+
+	case '(':
+		l.advance()
+		return token.New(token.LPAREN, string(l.currentChar))
+
+	case ')':
+		l.advance()
+		return token.New(token.RPAREN, string(l.currentChar))
 	}
 
 	l.error()
