@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"fmt"
 	"lsbasi/lexer"
 	"lsbasi/token"
 )
@@ -18,6 +19,7 @@ func (p *Parser) eat(tokenType token.TokenType) {
 	if p.currentToken.Type == tokenType {
 		p.currentToken = p.lexer.GetNextToken()
 	} else {
+		fmt.Println(p.currentToken, tokenType)
 		p.error()
 	}
 }
@@ -102,37 +104,53 @@ func (p *Parser) expr() interface{} {
 }
 
 func (p *Parser) program() interface{} {
-	return p.compoundStatement()
+	// program => compound_statement DOT
+
+	node := p.compoundStatement()
+	p.eat(token.DOT)
+	return node
 }
 
 func (p *Parser) compoundStatement() interface{} {
-	p.eat(token.LBRACE)
-	statements := []interface{}{}
-	for p.currentToken.Type != token.RBRACE {
-		statements = append(statements, p.statement())
-	}
-	p.eat(token.RBRACE)
+	// compound_statement => BEGIN statement_list END
+
+	p.eat(token.BEGIN)
+	statements := p.statementList()
+	p.eat(token.END)
 	return Compound{
 		Children: statements,
 	}
 }
 
+func (p *Parser) statementList() []interface{} {
+	/*
+			statement_list => statement
+		    	| statement SEMI statement_list
+	*/
+	node := p.statement()
+	results := []interface{}{node}
+	for p.currentToken.Type == token.SEMI {
+		p.eat(token.SEMI)
+		results = append(results, p.statement())
+	}
+
+	if p.currentToken.Type == token.ID {
+		p.error()
+	}
+
+	return results
+}
+
 func (p *Parser) statement() interface{} {
-	if p.currentToken.Type == token.LBRACE {
+	if p.currentToken.Type == token.BEGIN {
 		return p.compoundStatement()
-	} else if p.currentToken.Type == token.VAR {
-		statement := p.assignmentStatement()
-		p.eat(token.SEMI)
-		return statement
-	} else if p.currentToken.Type == token.SEMI {
-		p.eat(token.SEMI)
+	} else if p.currentToken.Type == token.ID {
+		return p.assignmentStatement()
 	}
 	return p.empty()
 }
 
 func (p *Parser) assignmentStatement() interface{} {
-	p.eat(token.VAR)
-
 	id := p.id()
 
 	op := p.currentToken

@@ -1,12 +1,11 @@
-{
-    {
-        // 梦幻开局
-        /*只能说GG*/
-        var _a = 1;var /*那*/ c /*真*/ = /*的*/ 2 /*没*/; /*了*/
-        var number = 2;
-        var a = number;
-        var b = 10 * a + 10 * number / 4;
-        var c = a - - b;
-    }
-    var d = _a;
-}
+BEGIN
+
+    BEGIN
+        number := 2;
+        a := NumBer;
+        B := 10 * a + 10 * NUMBER / 4;
+        c := a - - b
+    end;
+
+    _x := 11;
+END.

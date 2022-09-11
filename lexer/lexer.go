@@ -8,7 +8,8 @@ import (
 )
 
 var reserved_keywords = map[string]*token.Token{
-	"var": token.New(token.VAR, "var"),
+	"BEGIN": token.New(token.BEGIN, "BEGIN"),
+	"END":   token.New(token.END, "END"),
 }
 
 type Lexer struct {
@@ -64,36 +65,6 @@ func (l *Lexer) skipWhiteSpace() {
 	}
 }
 
-func (l *Lexer) skipComment(isMultiLine bool) {
-	var comment strings.Builder
-	if isMultiLine {
-		comment.WriteRune(l.currentChar)
-		l.advance()
-		comment.WriteRune(l.currentChar)
-		l.advance()
-		for {
-			if l.currentChar == '*' && l.peek() == '/' {
-				break
-			}
-			comment.WriteRune(l.currentChar)
-			l.advance()
-		}
-		comment.WriteRune(l.currentChar)
-		l.advance()
-		comment.WriteRune(l.currentChar)
-		l.advance()
-	} else {
-		for l.currentChar != '\n' {
-			comment.WriteRune(l.currentChar)
-			l.advance()
-		}
-		comment.WriteRune(l.currentChar)
-		l.advance()
-	}
-
-	// fmt.Println("comment: ", comment.String())
-}
-
 func (l *Lexer) advance() {
 	l.pos += 1
 	if l.pos < len(l.text) {
@@ -105,22 +76,8 @@ func (l *Lexer) advance() {
 
 func (l *Lexer) GetNextToken() *token.Token {
 
-	for unicode.IsSpace(l.currentChar) || l.currentChar == '/' {
-		if unicode.IsSpace(l.currentChar) {
-			l.skipWhiteSpace()
-		}
-
-		if l.currentChar == '/' {
-			nextChar := l.peek()
-			if nextChar == '/' {
-				l.skipComment(false)
-			} else if nextChar == '*' {
-				l.skipComment(true)
-			} else {
-				break
-			}
-		}
-
+	if unicode.IsSpace(l.currentChar) {
+		l.skipWhiteSpace()
 	}
 
 	if l.currentChar == 0 {
@@ -134,10 +91,17 @@ func (l *Lexer) GetNextToken() *token.Token {
 
 	if l.currentChar == '_' || unicode.IsLetter(l.currentChar) {
 		word := l.word()
+		word = strings.ToUpper(word)
 		if t, exists := reserved_keywords[word]; exists {
 			return t
 		}
 		return token.New(token.ID, word)
+	}
+
+	if l.currentChar == ':' && l.peek() == '=' {
+		l.advance()
+		l.advance()
+		return token.New(token.ASSIGN, ":=")
 	}
 
 	switch l.currentChar {
@@ -169,21 +133,13 @@ func (l *Lexer) GetNextToken() *token.Token {
 		l.advance()
 		return token.New(token.RPAREN, ")")
 
-	case '{':
-		l.advance()
-		return token.New(token.LBRACE, "{")
-
-	case '}':
-		l.advance()
-		return token.New(token.RBRACE, "}")
-
 	case ';':
 		l.advance()
 		return token.New(token.SEMI, ";")
 
-	case '=':
+	case '.':
 		l.advance()
-		return token.New(token.ASSIGN, "=")
+		return token.New(token.DOT, ".")
 	}
 
 	fmt.Printf("%v\n", l.text[l.pos:])

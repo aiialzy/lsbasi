@@ -19,6 +19,9 @@ const (
 	ASSIGN  TokenType = "ASSGIN"
 	VAR     TokenType = "VAR"
 	ID      TokenType = "ID"
+	BEGIN   TokenType = "BEGIN"
+	END     TokenType = "END"
+	DOT     TokenType = "DOT"
 	EOF     TokenType = "EOF"
 )
 

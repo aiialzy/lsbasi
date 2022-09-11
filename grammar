@@ -1,11 +1,15 @@
-var => "var"
+program => compound_statement DOT
 
-program => compound_statement
-compound_statement => LBRACE (statement)* RBRACE
-statement => compound_statement | assignment_statement | empty
-assignment_statement => var id ASSIGN expr SEMI
+compound_statement => BEGIN statement_list END
 
-comment => "//" \w* \n || "/*" .* "*/"
+statement_list => statement 
+    | statement SEMI statement_list
+    
+statement => compound_statement 
+    | assignment_statement 
+    | empty
+
+assignment_statement => id ASSIGN expr
 
 expr => term ((PLUS | SUB) term)*
 term =>  factor ((MUL | DIV | MOD) factor)*
