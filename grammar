@@ -1,4 +1,13 @@
-program => compound_statement DOT
+program => "program" id SEMI block DOT
+
+block => declarations compound_statement
+
+declarations => "var" (variable_declaration SEMI)+
+    | empty
+
+variable_declaration => id (comma id)* COLON type_spec
+
+type_spec => "integer" | "real"
 
 compound_statement => BEGIN statement_list END
 

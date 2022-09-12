@@ -3,6 +3,29 @@ package parser
 type AST struct {
 }
 
+type Program struct {
+	AST
+	Name  string
+	Block interface{}
+}
+
+type Block struct {
+	AST
+	Declarations      []interface{}
+	CompoundStatement interface{}
+}
+
+type VarDecl struct {
+	AST
+	VarNode  interface{}
+	TypeNode interface{}
+}
+
+type Type struct {
+	AST
+	Token interface{}
+}
+
 type Compound struct {
 	AST
 	Children []interface{}

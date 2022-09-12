@@ -8,8 +8,13 @@ import (
 )
 
 var reserved_keywords = map[string]*token.Token{
-	"BEGIN": token.New(token.BEGIN, "BEGIN"),
-	"END":   token.New(token.END, "END"),
+	"BEGIN":   token.New(token.BEGIN, "BEGIN"),
+	"END":     token.New(token.END, "END"),
+	"PROGRAM": token.New(token.PROGRAM, "PROGRAM"),
+	"VAR":     token.New(token.VAR, "VAR"),
+	"DIV":     token.New(token.INTEGER_DIV, "DIV"),
+	"INTEGER": token.New(token.INTEGER, "INTEGER"),
+	"REAL":    token.New(token.REAL, "REAL"),
 }
 
 type Lexer struct {
@@ -18,7 +23,7 @@ type Lexer struct {
 	currentChar rune
 }
 
-func (l *Lexer) integer() string {
+func (l *Lexer) number() *token.Token {
 	var number strings.Builder
 	for unicode.IsDigit(l.currentChar) ||
 		l.currentChar == 'x' ||
@@ -26,12 +31,18 @@ func (l *Lexer) integer() string {
 		l.currentChar == 'o' ||
 		l.currentChar == 'O' ||
 		l.currentChar == 'b' ||
-		l.currentChar == 'B' {
+		l.currentChar == 'B' ||
+		l.currentChar == '.' {
 		number.WriteRune(l.currentChar)
 		l.advance()
 	}
 
-	return number.String()
+	numStr := number.String()
+	if strings.Contains(numStr, ".") {
+		return token.New(token.FLOAT_CONST, numStr)
+	} else {
+		return token.New(token.INTEGER_CONST, numStr)
+	}
 }
 
 func (l *Lexer) word() string {
@@ -74,10 +85,30 @@ func (l *Lexer) advance() {
 	}
 }
 
-func (l *Lexer) GetNextToken() *token.Token {
+func (l *Lexer) skipComment() {
+	for l.currentChar != '}' {
+		l.advance()
+	}
+	l.advance()
+}
 
-	if unicode.IsSpace(l.currentChar) {
-		l.skipWhiteSpace()
+func (l *Lexer) GetNextToken() *token.Token {
+	t := l.nextToken()
+	// fmt.Println(t)
+
+	return t
+}
+
+func (l *Lexer) nextToken() *token.Token {
+
+	for unicode.IsSpace(l.currentChar) || l.currentChar == '{' {
+		if unicode.IsSpace(l.currentChar) {
+			l.skipWhiteSpace()
+		}
+
+		if l.currentChar == '{' {
+			l.skipComment()
+		}
 	}
 
 	if l.currentChar == 0 {
@@ -85,8 +116,7 @@ func (l *Lexer) GetNextToken() *token.Token {
 	}
 
 	if unicode.IsDigit(l.currentChar) {
-		number := l.integer()
-		return token.New(token.INTEGER, number)
+		return l.number()
 	}
 
 	if l.currentChar == '_' || unicode.IsLetter(l.currentChar) {
@@ -119,7 +149,7 @@ func (l *Lexer) GetNextToken() *token.Token {
 
 	case '/':
 		l.advance()
-		return token.New(token.DIV, "/")
+		return token.New(token.FLOAT_DIV, "/")
 
 	case '%':
 		l.advance()
@@ -140,9 +170,17 @@ func (l *Lexer) GetNextToken() *token.Token {
 	case '.':
 		l.advance()
 		return token.New(token.DOT, ".")
+
+	case ':':
+		l.advance()
+		return token.New(token.COLON, ":")
+
+	case ',':
+		l.advance()
+		return token.New(token.COMMA, ",")
 	}
 
-	fmt.Printf("%v\n", l.text[l.pos:])
+	fmt.Printf("%v\n", string(l.text[l.pos:]))
 	l.error()
 
 	return nil

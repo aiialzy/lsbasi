@@ -37,11 +37,16 @@ func (p *Parser) factor() interface{} {
 			Op:    op,
 			Right: p.factor(),
 		}
-	} else if p.currentToken.Type == token.INTEGER {
+	} else if p.currentToken.Type == token.INTEGER_CONST {
 		l = Num{
 			Value: p.currentToken,
 		}
-		p.eat(token.INTEGER)
+		p.eat(token.INTEGER_CONST)
+	} else if p.currentToken.Type == token.FLOAT_CONST {
+		l = Num{
+			Value: p.currentToken,
+		}
+		p.eat(token.FLOAT_CONST)
 	} else if p.currentToken.Type == token.ID {
 		l = ID{
 			Token: p.currentToken,
@@ -58,16 +63,20 @@ func (p *Parser) term() interface{} {
 		token.MUL,
 		token.DIV,
 		token.MOD,
+		token.INTEGER_DIV,
+		token.FLOAT_DIV,
 	}
 
 	for p.in(p.currentToken.Type, tokens) {
 		currentToken := p.currentToken
 		if p.currentToken.Type == token.MUL {
 			p.eat(token.MUL)
-		} else if p.currentToken.Type == token.DIV {
-			p.eat(token.DIV)
 		} else if p.currentToken.Type == token.MOD {
 			p.eat(token.MOD)
+		} else if p.currentToken.Type == token.INTEGER_DIV {
+			p.eat(token.INTEGER_DIV)
+		} else if p.currentToken.Type == token.FLOAT_DIV {
+			p.eat(token.FLOAT_DIV)
 		}
 		l = BinOp{
 			Left:  l,
@@ -103,12 +112,92 @@ func (p *Parser) expr() interface{} {
 	return l
 }
 
+func (p *Parser) block() interface{} {
+	declarationNodes := p.declarations()
+	compoundStatementNode := p.compoundStatement()
+	node := Block{
+		Declarations:      declarationNodes,
+		CompoundStatement: compoundStatementNode,
+	}
+
+	return node
+}
+
+func (p *Parser) declarations() []interface{} {
+	declarations := []interface{}{}
+	if p.currentToken.Type == token.VAR {
+		p.eat(token.VAR)
+		for p.currentToken.Type == token.ID {
+			varDecl := p.variableDeclaration()
+			declarations = append(declarations, varDecl...)
+			p.eat(token.SEMI)
+		}
+	}
+
+	return declarations
+}
+
+func (p *Parser) variableDeclaration() []interface{} {
+	varNodes := []interface{}{
+		ID{
+			Token: p.currentToken,
+		},
+	}
+
+	p.eat(token.ID)
+
+	for p.currentToken.Type == token.COMMA {
+		p.eat(token.COMMA)
+		varNodes = append(varNodes, p.currentToken)
+		p.eat(token.ID)
+	}
+
+	p.eat(token.COLON)
+
+	typeNode := p.typeSpec()
+	varDeclarations := []interface{}{}
+	for _, varNode := range varNodes {
+		varDeclarations = append(varDeclarations, VarDecl{
+			VarNode:  varNode,
+			TypeNode: typeNode,
+		})
+	}
+
+	return varDeclarations
+}
+
+func (p *Parser) typeSpec() interface{} {
+	t := p.currentToken
+	if p.currentToken.Type == token.INTEGER {
+		p.eat(token.INTEGER)
+	} else {
+		p.eat(token.REAL)
+	}
+
+	node := Type{
+		Token: t,
+	}
+
+	return node
+}
+
 func (p *Parser) program() interface{} {
 	// program => compound_statement DOT
 
-	node := p.compoundStatement()
+	p.eat(token.PROGRAM)
+
+	varNode := p.id()
+	programName := varNode.(ID).Token.(*token.Token).Value
+	p.eat(token.SEMI)
+
+	blockNode := p.block()
+	programNode := Program{
+		Name:  programName,
+		Block: blockNode,
+	}
+
 	p.eat(token.DOT)
-	return node
+	return programNode
 }
 
 func (p *Parser) compoundStatement() interface{} {

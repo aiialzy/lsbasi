@@ -6,6 +6,7 @@ import (
 	"lsbasi/parser"
 	"lsbasi/token"
 	"strconv"
+	"strings"
 )
 
 var globalScope = map[string]interface{}{}
@@ -19,9 +20,23 @@ func (i *Interpreter) error() {
 }
 
 func (i *Interpreter) visit(node interface{}) interface{} {
+	// fmt.Printf("%T\n", node)
+	// fmt.Println(node)
 	switch n := node.(type) {
 	case parser.Num:
 		return i.visitNum(n)
+
+	case parser.Program:
+		return i.visitProgram(n)
+
+	case parser.Block:
+		return i.visitBlock(n)
+
+	case parser.Type:
+		return i.visitType(n)
+
+	case parser.VarDecl:
+		return i.visitVarDecl(n)
 
 	case parser.UnaryOp:
 		return i.visitUnaryOp(n)
@@ -65,9 +80,18 @@ func (i *Interpreter) visitNum(node parser.Num) interface{} {
 			numStr = numStr[1:]
 		}
 	}
-	result, err := strconv.ParseInt(numStr, base, 64)
-	if err != nil {
-		panic(fmt.Sprintf("invalid integer: %v", value.Value))
+	var result interface{}
+	var err error
+	if strings.Contains(value.Value, ".") {
+		result, err = strconv.ParseFloat(numStr, 64)
+		if err != nil {
+			panic(fmt.Sprintf("invalid float: %v", value.Value))
+		}
+	} else {
+		result, err = strconv.ParseInt(numStr, base, 64)
+		if err != nil {
+			panic(fmt.Sprintf("invalid integer: %v", value.Value))
+		}
 	}
 	return result
 }
@@ -85,27 +109,74 @@ func (i *Interpreter) visitUnaryOp(node parser.UnaryOp) interface{} {
 	return 0
 }
 
+func (i *Interpreter) visitProgram(node parser.Program) interface{} {
+	i.visit(node.Block)
+	return nil
+}
+
+func (i *Interpreter) visitBlock(node parser.Block) interface{} {
+	for _, declaration := range node.Declarations {
+		i.visit(declaration)
+	}
+	i.visit(node.CompoundStatement)
+	return nil
+}
+
+func (i *Interpreter) visitVarDecl(node parser.VarDecl) interface{} {
+	return nil
+}
+
+func (i *Interpreter) visitType(node parser.Type) interface{} {
+	return nil
+}
+
 func (i *Interpreter) visitBinOp(node parser.BinOp) interface{} {
 	op := node.Op.(*token.Token)
 
-	l := i.visit(node.Left).(int64)
-	r := i.visit(node.Right).(int64)
+	l := i.visit(node.Left)
+	r := i.visit(node.Right)
 
-	switch op.Type {
-	case token.PLUS:
-		return l + r
+	if li, ok := l.(int64); ok && op.Type != token.FLOAT_DIV {
+		ri := r.(int64)
+		switch op.Type {
+		case token.PLUS:
+			return li + ri
 
-	case token.SUB:
-		return l - r
+		case token.SUB:
+			return li - ri
 
-	case token.MUL:
-		return l * r
+		case token.MUL:
+			return li * ri
 
-	case token.DIV:
-		return l / r
+		case token.MOD:
+			return li % ri
 
-	case token.MOD:
-		return l % r
+		case token.INTEGER_DIV:
+			return li / ri
+		}
+	} else {
+		var lf, rf float64
+		if _, ok := l.(float64); !ok {
+			lf = float64(l.(int64))
+			rf = float64(r.(int64))
+		} else {
+			lf = l.(float64)
+			rf = r.(float64)
+		}
+
+		switch op.Type {
+		case token.PLUS:
+			return lf + rf
+
+		case token.SUB:
+			return lf - rf
+
+		case token.MUL:
+			return lf * rf
+
+		case token.FLOAT_DIV:
+			return lf / rf
+		}
 	}
 
 	i.error()
